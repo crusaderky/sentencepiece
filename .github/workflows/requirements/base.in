@@ -1,5 +1,5 @@
-pip
+pip <25.1  # https://github.com/jazzband/pip-tools/issues/2176
 setuptools
+build
 wheel
-twine
-pytest
+twine >=6.1  # twine check fails on 5.1

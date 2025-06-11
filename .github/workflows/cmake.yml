@@ -7,6 +7,7 @@ on:
       - 'v*'
   pull_request:
     branches: [ master ]
+  workflow_dispatch: # allows to trigger/restart manually
 
 permissions:
   contents: read
@@ -14,67 +15,76 @@ permissions:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ ubuntu-latest, ubuntu-20.04, windows-latest, macOS-11 ]
-        arch: [ x64 ]
+        os: [ ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-latest ]
+        arch: [ '' ]
         include:
           - os: windows-latest
-            arch: x86
+            arch: Win32
+          - os: windows-latest
+            arch: x64
+          - os: windows-11-arm
+            arch: ARM64
+
     runs-on: ${{ matrix.os }}
 
     permissions:
       contents: write # svenstaro/upload-release-action 
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
-      with:
-        python-version: '3.x'
-        architecture: ${{matrix.arch}}
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
     - name: Config for Windows
       if: runner.os == 'Windows'
       run: |
-        if ("${{matrix.arch}}" -eq "x64") {
-          $msbuildPlatform = "x64"
-        } else {
-          $msbuildPlatform = "Win32"
-        }
-        cmake -A $msbuildPlatform -B ${{github.workspace}}/build -DSPM_BUILD_TEST=ON -DSPM_ENABLE_SHARED=OFF -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/build/root
+        cmake -A ${{ matrix.arch }} -B build -DSPM_BUILD_TEST=ON -DSPM_ENABLE_SHARED=OFF -DCMAKE_INSTALL_PREFIX=build/root
 
-    - name: Config for Unix
+    - name: Config for Linux/MacOSX
       if: runner.os != 'Windows'
-      run: cmake -B ${{github.workspace}}/build -DSPM_BUILD_TEST=ON -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/build/root
       env:
         CMAKE_OSX_ARCHITECTURES: arm64;x86_64
+      run: cmake -B build -DSPM_BUILD_TEST=ON -DCMAKE_INSTALL_PREFIX=build/root
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Release --target install --parallel 8
+      run: cmake --build build --config Release --target install --parallel 8
 
     - name: Test
-      working-directory: ${{github.workspace}}/build
+      working-directory: build
       run: ctest -C Release --output-on-failure
 
     - name: Package
-      working-directory: ${{github.workspace}}/build
+      working-directory: build
       run: cpack
 
-    - name: Build Python wrapper
-      working-directory: ${{github.workspace}}/python
-      run: |
-        python -m pip install --require-hashes --no-dependencies -r ../.github/workflows/requirements/base.txt
-        python setup.py build
-        python setup.py bdist_wheel
-        python -m pytest
+    - name: Rename Linux ARM binaries
+      # Avoid collision between Linux x64 and Linux ARM binaries,
+      # and between Windows x64 and Windows ARM, on
+      # svenstaro/upload-release-action below.
+      # Note that macos-13 and macos-latest also produce packages with
+      # colliding names, but both macOS builds feature both architectures.
+      if: matrix.os == 'ubuntu-24.04-arm'
+      run: for f in build/*Linux*.7z; do mv -v $f "${f/Linux/Linux-arm}"; done
 
-    - name: Upload artifcacts
-      uses: actions/upload-artifact@v3
+    - name: Rename Windows ARM binaries
+      # Avoid collision between Linux x64 and Linux ARM binaries,
+      # and between Windows x64 and Windows ARM, on
+      # svenstaro/upload-release-action below.
+      # Note that macos-13 and macos-latest also produce packages with
+      # colliding names, but both macOS builds feature both architectures.
+      if: matrix.os == 'windows-11-arm'
+      shell: bash
+      run: for f in build/*win64*.7z; do mv -v $f "${f/win64/win64-arm}"; done
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
-        name: artifcacts
+        name: artifacts-${{ matrix.os }}-${{ matrix.arch }}
         path: ./build/*.7z
 
     - name: Upload Release Assets
-      if: startsWith(github.ref, 'refs/tags/')
+      # Binaries built on MacOS Intel and MacOS M1 should be identical
+      if: startsWith(github.ref, 'refs/tags/') && matrix.os != 'macos-13'
       uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2.9.0
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}

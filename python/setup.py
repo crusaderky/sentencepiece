@@ -16,13 +16,11 @@
 
 import codecs
 import os
-import string
 import subprocess
 import sys
 import platform
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext as _build_ext
-from setuptools.command.build_py import build_py as _build_py
 
 sys.path.append(os.path.join('.', 'test'))
 
@@ -193,8 +191,8 @@ setup(
     version=__version__,
     package_dir={'': 'src'},
     url='https://github.com/google/sentencepiece',
-    license='Apache',
-    platforms='Unix',
+    license='Apache-2.0',
+    python_requires='>=3.6',
     py_modules=[
         'sentencepiece/__init__',
         'sentencepiece/_version',
@@ -208,9 +206,20 @@ setup(
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: Apache Software License',
-        'Operating System :: Unix',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX :: Linux',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3 :: Only',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Topic :: Text Processing :: Linguistic',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],

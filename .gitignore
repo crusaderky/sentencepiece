@@ -34,6 +34,7 @@ CPackConfig.cmake
 CTestTestfile.cmake
 CPackSourceConfig.cmake
 DartConfiguration.tcl
+Testing/
 
 *.o
 *.lo
@@ -75,3 +76,4 @@ _sentencepiece.*.so
 third_party/abseil-cpp
 
 python/sentencepiece
+python/wheelhouse
