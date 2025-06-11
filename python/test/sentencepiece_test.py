@@ -1,6 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 # Copyright 2018 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.!
 
-import sys
-
-sys.path.insert(0, 'src')
-
 from collections import defaultdict
 import io
 import os
@@ -26,11 +19,10 @@ import pickle
 import unittest
 import sentencepiece as spm
 
-print('VERSION={}'.format(spm.__version__))
-
-data_dir = 'test'
-if sys.platform == 'win32':
-  data_dir = os.path.join('..', 'data')
+DATA_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_FILE = os.path.join(DATA_DIR, 'test_model.model')
+MODEL_JA_FILE = os.path.join(DATA_DIR, 'test_ja_model.model')
+BOTCHAN = os.path.join(DATA_DIR, 'botchan.txt')
 
 
 class TestSentencepieceProcessor(unittest.TestCase):
@@ -39,13 +31,11 @@ class TestSentencepieceProcessor(unittest.TestCase):
   def setUp(self):
     self.sp_ = spm.SentencePieceProcessor()
     self.jasp_ = spm.SentencePieceProcessor()
-    self.assertTrue(self.sp_.Load(os.path.join('test', 'test_model.model')))
-    self.assertTrue(
-        self.jasp_.Load(os.path.join('test', 'test_ja_model.model'))
-    )
-    with open(os.path.join('test', 'test_model.model'), 'rb') as f:
+    self.assertTrue(self.sp_.Load(MODEL_FILE))
+    self.assertTrue(self.jasp_.Load(MODEL_JA_FILE))
+    with open(MODEL_FILE, 'rb') as f:
       self.assertTrue(self.sp_.LoadFromSerializedProto(f.read()))
-    with open(os.path.join('test', 'test_ja_model.model'), 'rb') as f:
+    with open(MODEL_JA_FILE, 'rb') as f:
       self.assertTrue(self.jasp_.LoadFromSerializedProto(f.read()))
 
   def test_load(self):
@@ -208,36 +198,31 @@ class TestSentencepieceProcessor(unittest.TestCase):
 
   def test_train(self):
     spm.SentencePieceTrainer.Train(
-        '--input='
-        + os.path.join(data_dir, 'botchan.txt')
-        + ' --model_prefix=m --vocab_size=1000'
+        f'--input={BOTCHAN} --model_prefix=m --vocab_size=1000'
     )
     sp = spm.SentencePieceProcessor()
     sp.Load('m.model')
-    with open(os.path.join(data_dir, 'botchan.txt'), 'r') as file:
+    with open(BOTCHAN, 'r') as file:
       for line in file:
         sp.DecodePieces(sp.EncodeAsPieces(line))
         sp.DecodeIds(sp.EncodeAsIds(line))
 
   def test_train_iterator(self):
     spm.SentencePieceTrainer.Train(
-        '--input='
-        + os.path.join(data_dir, 'botchan.txt')
-        + ' --model_prefix=m --vocab_size=1000'
+        f'--input={BOTCHAN} --model_prefix=m --vocab_size=1000'
     )
-    # Load as 'rb' for Python3.5/2.7.
     os1 = io.BytesIO()
     os2 = io.BytesIO()
 
     # suppress logging (redirect to /dev/null)
     spm.SentencePieceTrainer.train(
-        input=os.path.join(data_dir, 'botchan.txt'),
+        input=BOTCHAN,
         model_prefix='m',
         vocab_size=1000,
         logstream=open(os.devnull, 'w'),
     )
 
-    with open(os.path.join(data_dir, 'botchan.txt'), 'rb') as is1:
+    with open(BOTCHAN, 'rb') as is1:
       spm.SentencePieceTrainer.train(
           sentence_iterator=is1,
           model_prefix='m',
@@ -246,13 +231,13 @@ class TestSentencepieceProcessor(unittest.TestCase):
       )
 
     spm.SentencePieceTrainer.train(
-        input=os.path.join(data_dir, 'botchan.txt'),
+        input=BOTCHAN,
         model_writer=os1,
         vocab_size=1000,
         logstream=open(os.devnull, 'w'),
     )
 
-    with open(os.path.join(data_dir, 'botchan.txt'), 'rb') as is2:
+    with open(BOTCHAN, 'rb') as is2:
       spm.SentencePieceTrainer.train(
           sentence_iterator=is2,
           model_writer=os2,
@@ -270,7 +255,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
   def test_train_kwargs(self):
     # suppress logging (redirect to /dev/null)
     spm.SentencePieceTrainer.train(
-        input=[os.path.join(data_dir, 'botchan.txt')],
+        input=[BOTCHAN],
         model_prefix='m',
         vocab_size=1002,
         user_defined_symbols=['foo', 'bar', ',', ' ', '\t', '\b', '\n', '\r'],
@@ -278,7 +263,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
     )
     sp = spm.SentencePieceProcessor()
     sp.Load('m.model')
-    with open(os.path.join(data_dir, 'botchan.txt'), 'r') as file:
+    with open(BOTCHAN, 'r') as file:
       for line in file:
         sp.DecodePieces(sp.EncodeAsPieces(line))
         sp.DecodeIds(sp.EncodeAsIds(line))
@@ -486,9 +471,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
     self.assertEqual(s2, s1)
 
   def test_new_api(self):
-    sp = spm.SentencePieceProcessor(
-        model_file=os.path.join('test', 'test_model.model')
-    )
+    sp = spm.SentencePieceProcessor(model_file=MODEL_FILE)
     text = 'hello world'
     text2 = 'Tokyo'
     ids = self.sp_.EncodeAsIds(text)
@@ -582,7 +565,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
 
   def test_new_api_init(self):
     sp = spm.SentencePieceProcessor(
-        model_file=os.path.join('test', 'test_model.model'),
+        model_file=MODEL_FILE,
         add_bos=True,
         add_eos=True,
         out_type=str,
@@ -744,9 +727,9 @@ class TestSentencepieceProcessor(unittest.TestCase):
 
   def test_batch(self):
     sp = spm.SentencePieceProcessor(
-        model_file=os.path.join('test', 'test_model.model')
+        model_file=MODEL_FILE
     )
-    with open(os.path.join(data_dir, 'botchan.txt'), 'r') as file:
+    with open(BOTCHAN, 'r') as file:
       texts = file.readlines()
 
     for out_type in [str, int, 'serialized_proto', 'immutable_proto']:
@@ -798,9 +781,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
     spm.set_min_log_level(3)
 
   def test_normalize(self):
-    sp = spm.SentencePieceProcessor(
-        model_file=os.path.join('test', 'test_model.model')
-    )
+    sp = spm.SentencePieceProcessor(model_file=MODEL_FILE)
 
     self.assertEqual('▁KADOKAWAABC', sp.normalize('ＫＡＤＯＫＡＷＡABC'))
     self.assertEqual('▁KADOKAWAABC', sp.Normalize('ＫＡＤＯＫＡＷＡABC'))
@@ -841,9 +822,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
     self.assertEqual([0, 0, 0, 1], x[1][1])
 
   def test_normalizer(self):
-    sp = spm.SentencePieceNormalizer(
-        model_file=os.path.join('test', 'test_model.model')
-    )
+    sp = spm.SentencePieceNormalizer(model_file=MODEL_FILE)
 
     self.assertEqual('KADOKAWAABC', sp.normalize('ＫＡＤＯＫＡＷＡABC'))
     self.assertEqual('KADOKAWAABC', sp.Normalize('ＫＡＤＯＫＡＷＡABC'))
@@ -879,7 +858,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
     self.assertEqual([0, 0, 1], x[1][1])
 
     sp = spm.SentencePieceNormalizer(
-        model_file=os.path.join('test', 'test_model.model'),
+        model_file=MODEL_FILE,
         add_dummy_prefix=True,
         escape_whitespaces=True,
         remove_extra_whitespaces=False,
@@ -887,7 +866,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
     self.assertEqual('▁hello▁▁world', sp.normalize('hello  world'))
 
     sp = spm.SentencePieceNormalizer(
-        model_file=os.path.join('test', 'test_model.model'),
+        model_file=MODEL_FILE,
         add_dummy_prefix=True,
         escape_whitespaces=True,
         remove_extra_whitespaces=True,
@@ -895,7 +874,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
     self.assertEqual('▁hello▁world', sp.normalize('  hello  world  '))
 
     sp = spm.SentencePieceNormalizer(
-        model_file=os.path.join('test', 'test_model.model'),
+        model_file=MODEL_FILE,
         add_dummy_prefix=False,
         escape_whitespaces=False,
         remove_extra_whitespaces=True,
@@ -910,9 +889,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
     self.assertEqual('abc', sp.Normalize('ＡＢＣ'))
 
   def test_override_normalize_spec(self):
-    sp = spm.SentencePieceProcessor(
-        model_file=os.path.join('test', 'test_model.model')
-    )
+    sp = spm.SentencePieceProcessor(model_file=MODEL_FILE)
 
     self.assertEqual(
         sp.EncodeAsPieces(' hello  world '), ['▁he', 'll', 'o', '▁world']
@@ -925,13 +902,3 @@ class TestSentencepieceProcessor(unittest.TestCase):
         sp.EncodeAsPieces(' hello  world '),
         [' ', 'he', 'll', 'o', '  ', 'w', 'or', 'l', 'd', ' '],
     )
-
-
-def suite():
-  suite = unittest.TestSuite()
-  suite.addTests(unittest.makeSuite(TestSentencepieceProcessor))
-  return suite
-
-
-if __name__ == '__main__':
-  unittest.main()

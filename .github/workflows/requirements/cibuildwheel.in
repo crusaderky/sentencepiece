@@ -1,2 +1,4 @@
 -c base.txt
-cibuildwheel
+# cibuildwheel 3.0 drops support for Python 3.6 and 3.7;
+# it also no longer builds linux i686 by default.
+cibuildwheel <3
