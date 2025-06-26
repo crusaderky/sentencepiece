@@ -6,6 +6,7 @@ Makefile.in
 /test-driver
 /ylwrap
 /build
+/python/build
 
 /autom4te.cache
 /autoscan.log
@@ -64,9 +65,6 @@ dist/
 *.swp
 *.swo
 *.pyc
-
-m.model
-m.vocab
 
 cmake_install.cmake
 libsentencepiece.so*
