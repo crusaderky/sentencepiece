@@ -60,19 +60,9 @@ jobs:
           rm python/test/botchan.txt
           cp data/botchan.txt python/test/
 
-      - name: Build wheels
-        working-directory: python
-        run: python -m cibuildwheel --output-dir wheelhouse
-        env:
-          CIBW_ARCHS_LINUX: auto
-          CIBW_ARCHS_MACOS: x86_64 universal2 arm64
-          CIBW_ARCHS_WINDOWS: auto ARM64
-          CIBW_SKIP: pp* *-musllinux_*
-          CIBW_BUILD_VERBOSITY: 1
-          CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: pytest {project}/test
-
       - name: Build sdist archive
+        # NOTE: this also causes binary wheels to be built against the currenty
+        # checked out C++ code instead of main git tip; see build_bundled.sh.
         working-directory: python
         run: sh build_sdist.sh
 
@@ -86,7 +76,21 @@ jobs:
       - name: Copy sdist
         working-directory: python
         if: runner.os == 'macOS'
-        run: cp -f dist/*.tar.gz wheelhouse/
+        run: |
+          mkdir -p wheelhouse
+          cp -f dist/*.tar.gz wheelhouse/
+
+      - name: Build wheels
+        working-directory: python
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_ARCHS_LINUX: auto
+          CIBW_ARCHS_MACOS: x86_64 universal2 arm64
+          CIBW_ARCHS_WINDOWS: auto ARM64
+          CIBW_SKIP: pp* *-musllinux_*
+          CIBW_BUILD_VERBOSITY: 1
+          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_COMMAND: pytest {project}/test
 
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
