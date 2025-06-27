@@ -223,6 +223,5 @@ setup(
         'Topic :: Text Processing :: Linguistic',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    test_suite='sentencepiece_test.suite',
     tests_require=['pytest'],
 )
