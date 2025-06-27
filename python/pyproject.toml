@@ -1,0 +1,8 @@
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config -v -r sxfE --color=yes"
+xfail_strict = true
+testpaths = ["test"]
+filterwarnings = ["error"]  # Raise on unhandled warnings
+markers = [
+	"thread_unsafe: mark test as not safe to run with pytest-run-parallel"
+]

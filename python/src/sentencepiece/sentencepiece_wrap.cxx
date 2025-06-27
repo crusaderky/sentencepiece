@@ -10,6 +10,7 @@
 #define SWIG_VERSION 0x040400
 #define SWIGPYTHON
 #define SWIG_PYTHON_DIRECTOR_NO_VTABLE
+#define SWIGPYTHON_NOGIL
 
 #define SWIG_name    "_sentencepiece"
 /* -----------------------------------------------------------------------------
@@ -10809,6 +10810,13 @@ SWIG_init(void) {
     {
       Py_mod_exec, (void *)SWIG_mod_exec 
     },
+#ifdef SWIGPYTHON_NOGIL
+#ifdef Py_GIL_DISABLED
+    {
+      Py_mod_gil, Py_MOD_GIL_NOT_USED
+    },
+#endif
+#endif
     {
       0, NULL 
     }
