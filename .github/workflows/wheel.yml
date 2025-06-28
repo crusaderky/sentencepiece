@@ -67,7 +67,7 @@ jobs:
         run: sh build_sdist.sh
 
       - name: Validate sdist archive
-        run: twine check python/dist/*.tar.gz
+        run: twine check --strict python/dist/*.tar.gz
 
       - name: Build wheel from sdist
         shell: bash
