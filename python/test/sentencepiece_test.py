@@ -16,6 +16,7 @@ from collections import defaultdict
 import io
 import os
 import pickle
+import threading
 
 import pytest
 
@@ -184,7 +185,8 @@ class TestSentencepieceProcessor:
             ) == self.jasp_.calculate_entropy(text, 0.1)
 
     def test_train(self, tmp_path):
-        model_prefix = f"{tmp_path}/m"
+        tid = threading.get_ident()
+        model_prefix = f"{tmp_path}/m_{tid}"
 
         spm.SentencePieceTrainer.Train(
             f"--input={BOTCHAN} --model_prefix={model_prefix} --vocab_size=1000"
@@ -197,7 +199,8 @@ class TestSentencepieceProcessor:
                 sp.DecodeIds(sp.EncodeAsIds(line))
 
     def test_train_iterator(self, tmp_path):
-        model_prefix = f"{tmp_path}/m"
+        tid = threading.get_ident()
+        model_prefix = f"{tmp_path}/m_{tid}"
 
         spm.SentencePieceTrainer.Train(
             f"--input={BOTCHAN} --model_prefix={model_prefix} --vocab_size=1000"
@@ -243,7 +246,8 @@ class TestSentencepieceProcessor:
         ]
 
     def test_train_kwargs(self, tmp_path):
-        model_prefix = f"{tmp_path}/m"
+        tid = threading.get_ident()
+        model_prefix = f"{tmp_path}/m_{tid}"
 
         # suppress logging (redirect to /dev/null)
         spm.SentencePieceTrainer.train(
