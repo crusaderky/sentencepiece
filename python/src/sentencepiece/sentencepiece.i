@@ -1303,10 +1303,7 @@ inline void InitNumThreads(const std::vector<T> &ins, int *num_threads) {
     def _encode(value):
       """Encode value to CSV.."""
       if type(value) is list:
-        if sys.version_info[0] == 3:
-          f = StringIO()
-        else:
-          f = BytesIO()
+        f = io.StringIO()
         writer = csv.writer(f, lineterminator='')
         writer.writerow([str(v) for v in value])
         return f.getvalue()
@@ -1341,7 +1338,7 @@ inline void InitNumThreads(const std::vector<T> &ins, int *num_threads) {
 
   @staticmethod
   def Train(arg=None, logstream=None, **kwargs):
-    with _LogStream(ostream=logstream):
+    with LogStream(ostream=logstream):
       SentencePieceTrainer._Train(arg=arg, **kwargs)
 }
 }
@@ -1916,43 +1913,10 @@ inline void InitNumThreads(const std::vector<T> &ins, int *num_threads) {
 
 %pythoncode %{
 
-import re
 import csv
-import sys
-import os
-from io import StringIO
-from io import BytesIO
-
-
-def _add_snake_case(classname):
-  """Added snake_cased method from CammelCased method."""
-
-  snake_map = {}
-  for k, v in classname.__dict__.items():
-    if re.match(r'^[A-Z]+', k):
-      snake = re.sub(r'(?<!^)(?=[A-Z])', '_',
-                     k).lower().replace('n_best', 'nbest')
-      snake_map[snake] = v
-  for k, v in snake_map.items():
-    setattr(classname, k, v)
-
-
-def _batchnize(classname, name):
-  """Enables batch request for the method classname.name."""
-  func = getattr(classname, name, None)
-  def _func(v, n):
-    if type(n) is int and (n < 0 or n >= v.piece_size()):
-      raise IndexError('piece id is out of range.')
-    return func(v, n)
-
-  def _batched_func(self, arg):
-    if type(arg) is list:
-      return [_func(self, n) for n in arg]
-    else:
-      return _func(self, arg)
-
-  setattr(classname, name, _batched_func)
-
+import io
+from ._utils import batchnize, add_snake_case, LogStream
+from ._version import __version__
 
 _sentencepiece_processor_init_native = SentencePieceProcessor.__init__
 _sentencepiece_normalizer_init_native = SentencePieceNormalizer.__init__
@@ -1966,31 +1930,9 @@ for m in [
     'PieceToId', 'IdToPiece', 'GetScore', 'IsUnknown', 'IsControl', 'IsUnused',
     'IsByte'
 ]:
-  _batchnize(SentencePieceProcessor, m)
+  batchnize(SentencePieceProcessor, m)
 
-_add_snake_case(SentencePieceProcessor)
-_add_snake_case(SentencePieceTrainer)
-_add_snake_case(SentencePieceNormalizer)
-set_random_generator_seed = SetRandomGeneratorSeed
-set_min_log_level = SetMinLogLevel
-
-from ._version import __version__
-
-class _LogStream(object):
-  def __init__(self, ostream=None):
-    self.ostream = ostream
-    if self.ostream is not None:
-      self.orig_stream_fileno = sys.stderr.fileno()
-
-  def __enter__(self):
-    if self.ostream is not None:
-      self.orig_stream_dup = os.dup(self.orig_stream_fileno)
-      os.dup2(self.ostream.fileno(), self.orig_stream_fileno)
-
-  def __exit__(self, type, value, traceback):
-    if self.ostream is not None:
-      os.close(self.orig_stream_fileno)
-      os.dup2(self.orig_stream_dup, self.orig_stream_fileno)
-      os.close(self.orig_stream_dup)
-      self.ostream.close()
+add_snake_case(SentencePieceProcessor)
+add_snake_case(SentencePieceTrainer)
+add_snake_case(SentencePieceNormalizer)
 %}

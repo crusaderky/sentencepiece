@@ -66,6 +66,9 @@ dist/
 *.swo
 *.pyc
 
+.vscode/
+.idea/
+
 cmake_install.cmake
 libsentencepiece.so*
 libsentencepiece_train.so*

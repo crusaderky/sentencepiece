@@ -195,9 +195,11 @@ setup(
     python_requires='>=3.6',
     py_modules=[
         'sentencepiece/__init__',
+        'sentencepiece/_utils',
         'sentencepiece/_version',
         'sentencepiece/sentencepiece_model_pb2',
         'sentencepiece/sentencepiece_pb2',
+        'sentencepiece/sentencepiece',
     ],
     ext_modules=[SENTENCEPIECE_EXT],
     cmdclass=cmdclass,
