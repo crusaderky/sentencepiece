@@ -137,9 +137,7 @@ jobs:
       
       - name: Run free-threading tests
         working-directory: python
-        env:
-          PYTHON_GIL: 0   # TODO regenerate SWIG with -threads flag
-        run: pytest -Werror --parallel-threads 4
+        run: pytest --parallel-threads 4
 
   gather-digests:
     needs: [build-wheels]

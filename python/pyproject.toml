@@ -2,12 +2,7 @@
 addopts = "--strict-markers --strict-config -v -r sxfE --color=yes"
 xfail_strict = true
 testpaths = ["test"]
-
-# TODO regenerate SWIG with -threads flag
-# Can't enable this because we need PYTHON_GIL=0 to be set on 3.13t
-# and the same env variable NOT to be set on 3.13.
-# filterwarnings = ["error"]  # Raise on unhandled warnings
-
+filterwarnings = ["error"]  # Raise on unhandled warnings
 markers = [
 	"thread_unsafe: mark test as not safe to run with pytest-run-parallel"
 ]
