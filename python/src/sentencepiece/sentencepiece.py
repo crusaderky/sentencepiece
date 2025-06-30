@@ -1143,7 +1143,6 @@ _sentencepiece.SentencePieceNormalizer_swigregister(SentencePieceNormalizer)
 import csv
 import io
 from ._utils import batchnize, add_snake_case, LogStream
-from ._version import __version__
 
 _sentencepiece_processor_init_native = SentencePieceProcessor.__init__
 _sentencepiece_normalizer_init_native = SentencePieceNormalizer.__init__
