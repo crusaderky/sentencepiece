@@ -1,6 +1,7 @@
 import re
 import sys
 import os
+from threading import Lock
 
 
 def add_snake_case(cls):
@@ -36,7 +37,12 @@ def batchnize(cls, name):
 
 
 class LogStream:
-    """Context manager that redirects stderr globally to a file stream."""
+    """Context manager that redirects stderr globally to a file stream.
+
+    Not thread-safe. Raises in case of concurrent usage.
+    """
+
+    _lock = Lock()
 
     def __init__(self, ostream=None):
         self.ostream = ostream
@@ -44,6 +50,8 @@ class LogStream:
     def __enter__(self):
         if self.ostream is None:
             return
+        if not self._lock.acquire(blocking=False):
+            raise RuntimeError("The logstream= parameter is not thread-safe")
         self.orig_stream_fileno = sys.stderr.fileno()
         self.orig_stream_dup = os.dup(self.orig_stream_fileno)
         os.dup2(self.ostream.fileno(), self.orig_stream_fileno)
@@ -54,4 +62,4 @@ class LogStream:
         os.close(self.orig_stream_fileno)
         os.dup2(self.orig_stream_dup, self.orig_stream_fileno)
         os.close(self.orig_stream_dup)
-        self.ostream.close()
+        self._lock.release()
