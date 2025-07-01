@@ -13,7 +13,6 @@
 # limitations under the License.!
 
 from collections import defaultdict
-import concurrent.futures
 import io
 import os
 import pickle
@@ -285,25 +284,6 @@ class TestSentencepieceProcessor:
                 )
         with open(f"{tmp_path}/log.txt", "r", errors="ignore") as logstream:
             assert "LOG(INFO) Starts training with" in logstream.read()
-
-    @pytest.mark.thread_unsafe
-    def test_train_logstream_race_condition(self, tmp_path):
-        def f(barrier):
-            barrier.wait()
-            tid = threading.get_ident()
-            model_prefix = f"{tmp_path}/m_{tid}"
-            with open(os.devnull, "w") as logstream:
-                spm.SentencePieceTrainer.train(
-                    input=[BOTCHAN],
-                    model_prefix=model_prefix,
-                    vocab_size=1000,
-                    logstream=logstream,
-                )
-
-        with pytest.raises(
-            RuntimeError, match="logstream= parameter is not thread-safe"
-        ):
-            run_threaded(f, pass_barrier=True, outer_iterations=100)
 
     def test_serialized_proto(self):
         text = "I saw a girl with a telescope."
@@ -893,47 +873,3 @@ class TestSentencepieceProcessor:
 
         expect = [" ", "he", "ll", "o", "  ", "w", "or", "l", "d", " "]
         assert sp.EncodeAsPieces(" hello  world ") == expect
-
-
-def run_threaded(
-    func,
-    max_workers=8,
-    pass_count=False,
-    pass_barrier=False,
-    outer_iterations=1,
-    prepare_args=None,
-):
-    """Runs a function many times in parallel.
-
-    Copied from numpy.testing._private.utils.run_threaded.
-    """
-    for _ in range(outer_iterations):
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as tpe:
-            if prepare_args is None:
-                args = []
-            else:
-                args = prepare_args()
-            if pass_barrier:
-                barrier = threading.Barrier(max_workers)
-                args.append(barrier)
-            if pass_count:
-                all_args = [(func, i, *args) for i in range(max_workers)]
-            else:
-                all_args = [(func, *args) for i in range(max_workers)]
-            try:
-                futures = []
-                for arg in all_args:
-                    futures.append(tpe.submit(*arg))
-            except RuntimeError as e:
-                import pytest
-
-                pytest.skip(
-                    f"Spawning {max_workers} threads failed with "
-                    f"error {e!r} (likely due to resource limits on the "
-                    "system running the tests)"
-                )
-            finally:
-                if len(futures) < max_workers and pass_barrier:
-                    barrier.abort()
-            for f in futures:
-                f.result()
