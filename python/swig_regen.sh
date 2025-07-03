@@ -3,4 +3,4 @@
 
 set -o errexit
 cd "$(dirname "$0")"
-swig -c++ -python -I../src src/sentencepiece/sentencepiece.i
+swig -c++ -python -threads -I../src src/sentencepiece/sentencepiece.i
