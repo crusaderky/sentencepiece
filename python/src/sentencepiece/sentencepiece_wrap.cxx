@@ -10805,6 +10805,11 @@ SWIG_init(void) {
     {
       Py_mod_exec, (void *)SWIG_mod_exec 
     },
+#ifdef Py_GIL_DISABLED
+    {
+      Py_mod_gil, Py_MOD_GIL_NOT_USED
+    },
+#endif
     {
       0, NULL 
     }
