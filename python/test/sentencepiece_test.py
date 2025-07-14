@@ -17,6 +17,7 @@ import io
 import os
 import pickle
 import unittest
+import threading
 import sentencepiece as spm
 
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -197,6 +198,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
       )
 
   def test_train(self):
+    tid = threading.get_native_id()
     spm.SentencePieceTrainer.Train(
         f'--input={BOTCHAN} --model_prefix=m --vocab_size=1000'
     )
@@ -208,6 +210,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
         sp.DecodeIds(sp.EncodeAsIds(line))
 
   def test_train_iterator(self):
+    tid = threading.get_native_id()
     spm.SentencePieceTrainer.Train(
         f'--input={BOTCHAN} --model_prefix=m --vocab_size=1000'
     )
@@ -219,22 +222,22 @@ class TestSentencepieceProcessor(unittest.TestCase):
         input=BOTCHAN,
         model_prefix='m',
         vocab_size=1000,
-        logstream=open(os.devnull, 'w'),
+        # logstream=open(os.devnull, 'w'),
     )
 
     with open(BOTCHAN, 'rb') as is1:
       spm.SentencePieceTrainer.train(
           sentence_iterator=is1,
-          model_prefix='m',
+          model_prefix=f'm_{tid}',
           vocab_size=1000,
-          logstream=open(os.devnull, 'w'),
+          # logstream=open(os.devnull, 'w'),
       )
 
     spm.SentencePieceTrainer.train(
         input=BOTCHAN,
         model_writer=os1,
         vocab_size=1000,
-        logstream=open(os.devnull, 'w'),
+        # logstream=open(os.devnull, 'w'),
     )
 
     with open(BOTCHAN, 'rb') as is2:
@@ -242,7 +245,7 @@ class TestSentencepieceProcessor(unittest.TestCase):
           sentence_iterator=is2,
           model_writer=os2,
           vocab_size=1000,
-          logstream=open(os.devnull, 'w'),
+          # logstream=open(os.devnull, 'w'),
       )
 
     sp1 = spm.SentencePieceProcessor(model_proto=os1.getvalue())
@@ -253,13 +256,14 @@ class TestSentencepieceProcessor(unittest.TestCase):
     )
 
   def test_train_kwargs(self):
+    tid = threading.get_native_id()
     # suppress logging (redirect to /dev/null)
     spm.SentencePieceTrainer.train(
         input=[BOTCHAN],
         model_prefix='m',
         vocab_size=1002,
         user_defined_symbols=['foo', 'bar', ',', ' ', '\t', '\b', '\n', '\r'],
-        logstream=open(os.devnull, 'w'),
+        # logstream=open(os.devnull, 'w'),
     )
     sp = spm.SentencePieceProcessor()
     sp.Load('m.model')

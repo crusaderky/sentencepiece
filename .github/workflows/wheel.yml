@@ -22,7 +22,7 @@ jobs:
     name: Build wheels on ${{ matrix.os }}
 
     permissions:
-      contents: write # svenstaro/upload-release-action 
+      contents: write # svenstaro/upload-release-action
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -93,14 +93,14 @@ jobs:
           CIBW_TEST_COMMAND: pytest -Werror -v {project}/test
 
       - name: Upload artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@v4
         with:
           name: artifacts-${{ matrix.os }}
           path: python/wheelhouse/*
 
       - name: Upload wheel release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2.9.0
+        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2.11.2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./python/wheelhouse/*
@@ -135,7 +135,7 @@ jobs:
       actions: read   # To read the workflow path.
       id-token: write # To sign the provenance.
       contents: write # To add assets to a release.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: "${{ needs.gather-digests.outputs.digests }}"
       upload-assets: true # Optional: Upload to a new release
