@@ -64,6 +64,9 @@ dist/
 *.swo
 *.pyc
 
+.vscode/
+.idea/
+
 m.model
 m.vocab
 
