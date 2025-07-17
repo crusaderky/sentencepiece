@@ -6,7 +6,7 @@ on:
     tags:
       - 'v*'
   pull_request:
-    branches: [ master ]
+  workflow_dispatch: # allows to trigger/restart manually
 
 permissions:
   contents: read
